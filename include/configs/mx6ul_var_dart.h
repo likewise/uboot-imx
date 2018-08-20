@@ -108,7 +108,7 @@
 		"else " \
 			"bootz; " \
 		"fi\0" \
-
+        "bootcmd_mfg=sdp 0\0" \
 
 #ifdef CONFIG_NAND_BOOT
 #define BOOT_ENV_SETTINGS	NAND_BOOT_ENV_SETTINGS
