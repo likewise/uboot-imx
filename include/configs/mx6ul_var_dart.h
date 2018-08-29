@@ -58,6 +58,22 @@
 #define CONFIG_SYS_I2C_SPEED		100000
 #endif
 
+#define OSTREE_BOOT_ENV_SETTINGS \
+        "kernel_addr_r=0x81000000\0" \
+        "ostree_partition=1\0" \
+        "ostree_device=/dev/mmcblk${mmcdev}p\0" \
+        "bootcmd_otenv=ext4load mmc ${mmcdev}:${ostree_partition} $loadaddr /boot/loader/uEnv.txt; env import -t $loadaddr $filesize\0" \
+        "bootcmd_args=setenv ostree_root ${ostree_device}${ostree_partition}; " \
+                "setenv bootargs $bootargs $bootargs_fdt ostree_root=${ostree_root} root=${ostree_root} rw rootwait rootdelay=2 console=$console,$baudrate\0" \
+        "bootcmd_load=if test '${fallback}' = true; then " \
+                "ext4load mmc ${mmcdev}:${ostree_partition} $kernel_addr_r /boot${kernel_image2}; " \
+        "else " \
+                "ext4load mmc ${mmcdev}:${ostree_partition} $kernel_addr_r /boot${kernel_image}; " \
+        "fi;\0" \
+        "bootcmd_run=bootm ${kernel_addr_r}#conf@dartboard.dtb; " \
+                "bootm ${kernel_addr_r}#conf@dartboard-fallback.dtb;\0" \
+        "bootcmd_ostree=mmc dev ${mmcdev}; mmc rescan; run bootcmd_otenv; run bootcmd_args; run bootcmd_load; run bootcmd_run\0"
+
 #define NAND_BOOT_ENV_SETTINGS \
 	"nandargs=setenv bootargs console=${console},${baudrate} " \
 		"ubi.mtd=4 root=ubi0:rootfs rootfstype=ubifs rw ${cma_size}\0" \
