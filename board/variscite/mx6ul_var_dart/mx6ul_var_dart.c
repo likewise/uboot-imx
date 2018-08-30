@@ -877,6 +877,7 @@ void spl_dram_init(void)
 	}
 
 	var_eeprom_v2_dram_init(&var_eeprom_v2_cfg);
+	writel(0x800, 0x021B0020);
 
 	var_eeprom_v2_print_production_info(&var_eeprom_v2_cfg);
 	var_eeprom_v2_print_som_info(&var_eeprom_v2_cfg);
