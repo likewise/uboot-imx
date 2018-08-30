@@ -59,20 +59,22 @@
 #endif
 
 #define OSTREE_BOOT_ENV_SETTINGS \
-        "kernel_addr_r=0x81000000\0" \
+        "kernel_addr_r=0x83000000\0" \
         "ostree_partition=1\0" \
-        "ostree_device=/dev/mmcblk${mmcdev}p\0" \
-        "bootcmd_otenv=ext4load mmc ${mmcdev}:${ostree_partition} $loadaddr /boot/loader/uEnv.txt; env import -t $loadaddr $filesize\0" \
-        "bootcmd_args=setenv ostree_root ${ostree_device}${ostree_partition}; " \
-                "setenv bootargs $bootargs $bootargs_fdt ostree_root=${ostree_root} root=${ostree_root} rw rootwait rootdelay=2 console=$console,$baudrate\0" \
-        "bootcmd_load=if test '${fallback}' = true; then " \
+        "ostree_importenv=ext4load mmc ${mmcdev}:${ostree_partition} $loadaddr /boot/loader/uEnv.txt; env import -t $loadaddr $filesize\0" \
+        "ostree_setargs=setenv ostree_root /dev/mmcblk${mmcdev}p${ostree_partition}; " \
+                "setenv bootargs $bootargs $bootargs_fdt ostree_root=${ostree_root} root=${ostree_root} rw rootwait console=$console,$baudrate\0" \
+        "ostree_load=if test '${fallback}' = true; then " \
                 "ext4load mmc ${mmcdev}:${ostree_partition} $kernel_addr_r /boot${kernel_image2}; " \
         "else " \
                 "ext4load mmc ${mmcdev}:${ostree_partition} $kernel_addr_r /boot${kernel_image}; " \
         "fi;\0" \
-        "bootcmd_run=bootm ${kernel_addr_r}#conf@dartboard.dtb; " \
-                "bootm ${kernel_addr_r}#conf@dartboard-fallback.dtb;\0" \
-        "bootcmd_ostree=mmc dev ${mmcdev}; mmc rescan; run bootcmd_otenv; run bootcmd_args; run bootcmd_load; run bootcmd_run\0"
+        "ostree_run=" \
+                "bootm ${kernel_addr_r}#conf@${fdt_file}; " \
+                "bootm ${kernel_addr_r}#conf@$imx6ull-var-dart-fallback.dtb;\0" \
+        "bootcmd_ostree=mmc dev ${mmcdev}; mmc rescan; run ostree_importenv; run ostree_setargs; run ostree_load; run ostree_run;\0" \
+        "ostree_test=run findfdt; mmc dev ${mmcdev}; mmc rescan; run ostree_importenv; run ostree_setargs; run optargs; run ostree_load; iminfo ${kernel_addr_r}; " \
+		"printenv bootargs; printenv kernel_image; printenv kernel_image2;\0"
 
 #define NAND_BOOT_ENV_SETTINGS \
 	"nandargs=setenv bootargs console=${console},${baudrate} " \
@@ -92,7 +94,7 @@
 	"mmcblk=0\0" \
 	"mmcautodetect=yes\0" \
 	"mmcbootpart=1\0" \
-	"mmcrootpart=2\0" \
+	"mmcrootpart=1\0" \
 	"mmcargs=setenv bootargs console=${console},${baudrate} " \
 		"root=/dev/mmcblk${mmcblk}p${mmcrootpart} rootwait rw " \
 		"${cma_size}\0" \
@@ -133,6 +135,12 @@
 	"run nandboot || " \
 	"run netboot"
 
+#elif defined(OSTREE_BOOT_ENV_SETTINGS)
+#define BOOT_ENV_SETTINGS	MMC_BOOT_ENV_SETTINGS OSTREE_BOOT_ENV_SETTINGS
+#define CONFIG_BOOTCOMMAND \
+	"run ramsize_check; " \
+	"run findfdt; " \
+	"run bootcmd_ostree; "
 #else
 #define BOOT_ENV_SETTINGS	MMC_BOOT_ENV_SETTINGS
 #define CONFIG_BOOTCOMMAND \
